@@ -1,0 +1,12 @@
+{
+  "format": "email-guard-disposable/1",
+  "version": "0.0.0-test",
+  "generated_at": "2026-06-11T00:00:00Z",
+  "count": 4,
+  "domains": [
+    "10minutemail.com",
+    "guerrillamail.com",
+    "mailinator.com",
+    "yopmail.com"
+  ]
+}

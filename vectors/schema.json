@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Emailsherlock1/email-guard-spec/vectors/schema.json",
+  "title": "Email-Guard conformance vector file",
+  "type": "object",
+  "required": ["format", "spec_version", "vectors"],
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "const": "email-guard-vectors/1"
+    },
+    "spec_version": {
+      "type": "string",
+      "description": "Spec version these vectors belong to (SemVer)."
+    },
+    "category": {
+      "type": "string",
+      "description": "Human label for the file, e.g. 'syntax'."
+    },
+    "vectors": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/vector" }
+    }
+  },
+  "$defs": {
+    "verdict": {
+      "enum": ["valid", "invalid", "disposable", "role", "catch_all", "unknown"]
+    },
+    "action": {
+      "enum": ["allow", "deny", "review"]
+    },
+    "vector": {
+      "type": "object",
+      "required": ["id", "input", "expected"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z]+-[0-9]{3}$"
+        },
+        "description": { "type": "string" },
+        "input": {
+          "type": "object",
+          "required": ["email"],
+          "additionalProperties": false,
+          "properties": {
+            "email": { "type": "string" },
+            "config": { "$ref": "#/$defs/config" },
+            "api": {
+              "description": "Transport mock: null = no API key configured, 'unavailable' = timeout / non-2xx, object = parsed response body the mock returns.",
+              "oneOf": [
+                { "type": "null" },
+                { "const": "unavailable" },
+                { "type": "object" }
+              ]
+            }
+          }
+        },
+        "expected": {
+          "type": "object",
+          "required": ["verdict", "action", "reasons", "degraded", "api_called"],
+          "additionalProperties": false,
+          "properties": {
+            "verdict": { "$ref": "#/$defs/verdict" },
+            "action": { "$ref": "#/$defs/action" },
+            "reasons": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "degraded": { "type": "boolean" },
+            "api_called": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "config": {
+      "type": "object",
+      "description": "Partial configuration; omitted keys take the spec defaults (api_key null, block_on [invalid, disposable], review_on [], fail_open true, timeout_ms 800).",
+      "additionalProperties": false,
+      "properties": {
+        "api_key": {
+          "type": ["string", "null"]
+        },
+        "block_on": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/verdict" }
+        },
+        "review_on": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/verdict" }
+        },
+        "fail_open": { "type": "boolean" },
+        "timeout_ms": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

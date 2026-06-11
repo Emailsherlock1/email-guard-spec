@@ -1,0 +1,49 @@
+{
+  "format": "email-guard-vectors/1",
+  "spec_version": "1.0.0-rc.1",
+  "category": "disposable",
+  "vectors": [
+    {
+      "id": "disp-001",
+      "description": "Snapshot hit denies under the default block_on",
+      "input": { "email": "x@mailinator.com" },
+      "expected": { "verdict": "disposable", "action": "deny", "reasons": ["disposable_provider"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "disp-002",
+      "description": "Snapshot matching is case-insensitive on the domain",
+      "input": { "email": "x@MAILINATOR.com" },
+      "expected": { "verdict": "disposable", "action": "deny", "reasons": ["disposable_provider"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "disp-003",
+      "description": "Exact matching only: a subdomain of a listed provider does not match locally (parity with the API's matching rule)",
+      "input": { "email": "x@sub.mailinator.com" },
+      "expected": { "verdict": "unknown", "action": "allow", "reasons": [], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "disp-004",
+      "description": "Different TLD of a listed provider is not in the snapshot",
+      "input": { "email": "x@mailinator.org" },
+      "expected": { "verdict": "unknown", "action": "allow", "reasons": [], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "disp-005",
+      "description": "Verdict still computed when disposable is not blocked; policy belongs to the integrator",
+      "input": {
+        "email": "x@yopmail.com",
+        "config": { "block_on": ["invalid"] }
+      },
+      "expected": { "verdict": "disposable", "action": "allow", "reasons": ["disposable_provider"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "disp-006",
+      "description": "review_on routes disposable hits to a second gate instead of denying",
+      "input": {
+        "email": "x@yopmail.com",
+        "config": { "block_on": ["invalid"], "review_on": ["disposable"] }
+      },
+      "expected": { "verdict": "disposable", "action": "review", "reasons": ["disposable_provider"], "degraded": false, "api_called": false }
+    }
+  ]
+}

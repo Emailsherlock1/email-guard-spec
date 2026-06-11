@@ -1,0 +1,137 @@
+{
+  "format": "email-guard-vectors/1",
+  "spec_version": "1.0.0-rc.1",
+  "category": "api-mapping",
+  "vectors": [
+    {
+      "id": "api-001",
+      "description": "API result maps verbatim to the verdict; the API reason joins the reason list",
+      "input": {
+        "email": "jane@real-corp.com",
+        "config": { "api_key": "test-key" },
+        "api": { "result": "valid", "reason": "mailbox_accepts" }
+      },
+      "expected": { "verdict": "valid", "action": "allow", "reasons": ["mailbox_accepts"], "degraded": false, "api_called": true }
+    },
+    {
+      "id": "api-002",
+      "description": "Mailbox rejected by the receiving server",
+      "input": {
+        "email": "ghost@real-corp.com",
+        "config": { "api_key": "test-key" },
+        "api": { "result": "invalid", "reason": "mailbox_not_found" }
+      },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["mailbox_not_found"], "degraded": false, "api_called": true }
+    },
+    {
+      "id": "api-003",
+      "description": "Domain without MX records",
+      "input": {
+        "email": "jane@no-mail-here.net",
+        "config": { "api_key": "test-key" },
+        "api": { "result": "invalid", "reason": "no_mx" }
+      },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["no_mx"], "degraded": false, "api_called": true }
+    },
+    {
+      "id": "api-004",
+      "description": "The live list catches a disposable domain the bundled snapshot missed",
+      "input": {
+        "email": "x@brand-new-burner.io",
+        "config": { "api_key": "test-key" },
+        "api": { "result": "disposable", "reason": "disposable_provider" }
+      },
+      "expected": { "verdict": "disposable", "action": "deny", "reasons": ["disposable_provider"], "degraded": false, "api_called": true }
+    },
+    {
+      "id": "api-005",
+      "description": "Role addresses pass under the default policy",
+      "input": {
+        "email": "info@real-corp.com",
+        "config": { "api_key": "test-key" },
+        "api": { "result": "role", "reason": "role_address" }
+      },
+      "expected": { "verdict": "role", "action": "allow", "reasons": ["role_address"], "degraded": false, "api_called": true }
+    },
+    {
+      "id": "api-006",
+      "description": "Blocking role addresses is one config entry",
+      "input": {
+        "email": "info@real-corp.com",
+        "config": { "api_key": "test-key", "block_on": ["invalid", "disposable", "role"] },
+        "api": { "result": "role", "reason": "role_address" }
+      },
+      "expected": { "verdict": "role", "action": "deny", "reasons": ["role_address"], "degraded": false, "api_called": true }
+    },
+    {
+      "id": "api-007",
+      "description": "Catch-all domains pass under the default policy",
+      "input": {
+        "email": "anything@catchall-corp.com",
+        "config": { "api_key": "test-key" },
+        "api": { "result": "catch_all", "reason": "catch_all_domain" }
+      },
+      "expected": { "verdict": "catch_all", "action": "allow", "reasons": ["catch_all_domain"], "degraded": false, "api_called": true }
+    },
+    {
+      "id": "api-008",
+      "description": "Routing catch-all to review for flows with a confirmation step",
+      "input": {
+        "email": "anything@catchall-corp.com",
+        "config": { "api_key": "test-key", "review_on": ["catch_all"] },
+        "api": { "result": "catch_all", "reason": "catch_all_domain" }
+      },
+      "expected": { "verdict": "catch_all", "action": "review", "reasons": ["catch_all_domain"], "degraded": false, "api_called": true }
+    },
+    {
+      "id": "api-009",
+      "description": "An answered unknown (greylisting) is a normal verdict, not degradation",
+      "input": {
+        "email": "jane@slow-mta.com",
+        "config": { "api_key": "test-key" },
+        "api": { "result": "unknown", "reason": "greylisted" }
+      },
+      "expected": { "verdict": "unknown", "action": "allow", "reasons": ["greylisted"], "degraded": false, "api_called": true }
+    },
+    {
+      "id": "api-010",
+      "description": "Deferred verification is an answered unknown",
+      "input": {
+        "email": "jane@slow-mta.com",
+        "config": { "api_key": "test-key" },
+        "api": { "result": "unknown", "reason": "verification_pending" }
+      },
+      "expected": { "verdict": "unknown", "action": "allow", "reasons": ["verification_pending"], "degraded": false, "api_called": true }
+    },
+    {
+      "id": "api-011",
+      "description": "block_on applies to answered unknowns (contrast with fail-open-003)",
+      "input": {
+        "email": "jane@slow-mta.com",
+        "config": { "api_key": "test-key", "block_on": ["invalid", "disposable", "unknown"] },
+        "api": { "result": "unknown", "reason": "greylisted" }
+      },
+      "expected": { "verdict": "unknown", "action": "deny", "reasons": ["greylisted"], "degraded": false, "api_called": true }
+    },
+    {
+      "id": "api-012",
+      "description": "Unrecognized future reason strings pass through verbatim",
+      "input": {
+        "email": "jane@real-corp.com",
+        "config": { "api_key": "test-key" },
+        "api": { "result": "invalid", "reason": "mailbox_full" }
+      },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["mailbox_full"], "degraded": false, "api_called": true }
+    },
+    {
+      "id": "api-013",
+      "description": "A null API reason adds nothing to the reason list (legacy cached results)",
+      "input": {
+        "email": "jane@real-corp.com",
+        "config": { "api_key": "test-key" },
+        "api": { "result": "valid", "reason": null }
+      },
+      "expected": { "verdict": "valid", "action": "allow", "reasons": [], "degraded": false, "api_called": true }
+    }
+  ]
+}

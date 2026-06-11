@@ -1,0 +1,63 @@
+{
+  "format": "email-guard-vectors/1",
+  "spec_version": "1.0.0-rc.1",
+  "category": "fail-open",
+  "vectors": [
+    {
+      "id": "fo-001",
+      "description": "API outage with the default config lets the address through and flags degradation",
+      "input": {
+        "email": "jane@real-corp.com",
+        "config": { "api_key": "test-key" },
+        "api": "unavailable"
+      },
+      "expected": { "verdict": "unknown", "action": "allow", "reasons": ["api_unavailable"], "degraded": true, "api_called": true }
+    },
+    {
+      "id": "fo-002",
+      "description": "fail_open false turns an outage into a deny",
+      "input": {
+        "email": "jane@real-corp.com",
+        "config": { "api_key": "test-key", "fail_open": false },
+        "api": "unavailable"
+      },
+      "expected": { "verdict": "unknown", "action": "deny", "reasons": ["api_unavailable"], "degraded": true, "api_called": true }
+    },
+    {
+      "id": "fo-003",
+      "description": "Degradation bypasses block_on: blocking unknown must not turn an outage into rejected signups (contrast with api-011)",
+      "input": {
+        "email": "jane@real-corp.com",
+        "config": { "api_key": "test-key", "block_on": ["invalid", "disposable", "unknown"] },
+        "api": "unavailable"
+      },
+      "expected": { "verdict": "unknown", "action": "allow", "reasons": ["api_unavailable"], "degraded": true, "api_called": true }
+    },
+    {
+      "id": "fo-004",
+      "description": "Degradation bypasses review_on the same way",
+      "input": {
+        "email": "jane@real-corp.com",
+        "config": { "api_key": "test-key", "review_on": ["unknown"] },
+        "api": "unavailable"
+      },
+      "expected": { "verdict": "unknown", "action": "allow", "reasons": ["api_unavailable"], "degraded": true, "api_called": true }
+    },
+    {
+      "id": "fo-005",
+      "description": "Local checks keep working during an outage; provable junk still denies",
+      "input": {
+        "email": "x@deleted.invalid",
+        "config": { "api_key": "test-key" },
+        "api": "unavailable"
+      },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["reserved_tld"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "fo-006",
+      "description": "No key configured is a configuration, not an outage: degraded stays false",
+      "input": { "email": "jane@real-corp.com" },
+      "expected": { "verdict": "unknown", "action": "allow", "reasons": [], "degraded": false, "api_called": false }
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "format": "email-guard-vectors/1",
+  "spec_version": "1.0.0-rc.1",
+  "category": "reserved-tld",
+  "vectors": [
+    {
+      "id": "rtld-001",
+      "description": "The origin story: syntactically valid junk on a reserved TLD",
+      "input": { "email": "deleted+user274@deleted.invalid" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["reserved_tld"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "rtld-002",
+      "description": ".test is reserved (RFC 2606)",
+      "input": { "email": "dev@app.test" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["reserved_tld"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "rtld-003",
+      "description": ".localhost as TLD of a multi-label domain",
+      "input": { "email": "jane@foo.localhost" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["reserved_tld"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "rtld-004",
+      "description": "example.com is a reserved domain (RFC 2606)",
+      "input": { "email": "jane@example.com" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["reserved_tld"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "rtld-005",
+      "description": "Subdomain of a reserved domain matches by dot-suffix",
+      "input": { "email": "jane@mail.example.org" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["reserved_tld"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "rtld-006",
+      "description": ".local is mDNS space (RFC 6762)",
+      "input": { "email": "jane@printer.local" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["reserved_tld"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "rtld-007",
+      "description": ".onion never resolves in public DNS (RFC 7686)",
+      "input": { "email": "jane@hidden.onion" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["reserved_tld"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "rtld-008",
+      "description": ".internal is ICANN-reserved for private use",
+      "input": { "email": "jane@service.internal" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["reserved_tld"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "rtld-009",
+      "description": ".alt is reserved for non-DNS use (RFC 9476)",
+      "input": { "email": "jane@myapp.alt" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["reserved_tld"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "rtld-010",
+      "description": "Suffix match requires the dot: exampleshop.com is not example.com",
+      "input": { "email": "jane@exampleshop.com" },
+      "expected": { "verdict": "unknown", "action": "allow", "reasons": [], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "rtld-011",
+      "description": "TLD match is exact: testing is not test",
+      "input": { "email": "jane@acme.testing" },
+      "expected": { "verdict": "unknown", "action": "allow", "reasons": [], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "rtld-012",
+      "description": "Domain comparison is case-insensitive",
+      "input": { "email": "jane@EXAMPLE.COM" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["reserved_tld"], "degraded": false, "api_called": false }
+    }
+  ]
+}

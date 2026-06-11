@@ -1,0 +1,151 @@
+{
+  "format": "email-guard-vectors/1",
+  "spec_version": "1.0.0-rc.1",
+  "category": "syntax",
+  "vectors": [
+    {
+      "id": "syntax-001",
+      "description": "Plain address passes local checks; no key means verdict stays unknown",
+      "input": { "email": "jane@acme-corp.com" },
+      "expected": { "verdict": "unknown", "action": "allow", "reasons": [], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "syntax-002",
+      "description": "Dots, plus-tag and subdomain are fine",
+      "input": { "email": "jane.doe+tag@mail.acme-corp.com" },
+      "expected": { "verdict": "unknown", "action": "allow", "reasons": [], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "syntax-003",
+      "description": "Empty input",
+      "input": { "email": "" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["bad_syntax"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "syntax-004",
+      "description": "No @ at all",
+      "input": { "email": "janeacme-corp.com" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["bad_syntax"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "syntax-005",
+      "description": "Two @ characters",
+      "input": { "email": "jane@@acme-corp.com" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["bad_syntax"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "syntax-006",
+      "description": "Space inside the local part",
+      "input": { "email": "jane doe@acme-corp.com" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["bad_syntax"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "syntax-007",
+      "description": "Surrounding whitespace is trimmed before checks",
+      "input": { "email": "  jane@acme-corp.com  " },
+      "expected": { "verdict": "unknown", "action": "allow", "reasons": [], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "syntax-008",
+      "description": "Local part starts with a dot",
+      "input": { "email": ".jane@acme-corp.com" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["bad_syntax"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "syntax-009",
+      "description": "Local part ends with a dot",
+      "input": { "email": "jane.@acme-corp.com" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["bad_syntax"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "syntax-010",
+      "description": "Consecutive dots in the local part",
+      "input": { "email": "ja..ne@acme-corp.com" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["bad_syntax"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "syntax-011",
+      "description": "Local part of 64 characters is the upper boundary and passes",
+      "input": { "email": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@acme-corp.com" },
+      "expected": { "verdict": "unknown", "action": "allow", "reasons": [], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "syntax-012",
+      "description": "Local part of 65 characters exceeds the limit",
+      "input": { "email": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@acme-corp.com" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["bad_syntax"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "syntax-013",
+      "description": "Single-label domain fails syntax before the reserved-TLD check runs",
+      "input": { "email": "jane@localhost" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["bad_syntax"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "syntax-014",
+      "description": "Trailing dot on the domain is an empty final label",
+      "input": { "email": "jane@acme-corp.com." },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["bad_syntax"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "syntax-015",
+      "description": "Domain label starting with a hyphen",
+      "input": { "email": "jane@-acme.com" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["bad_syntax"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "syntax-016",
+      "description": "One-character TLD",
+      "input": { "email": "jane@acme.c" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["bad_syntax"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "syntax-017",
+      "description": "All-digit TLD",
+      "input": { "email": "jane@acme.123" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["bad_syntax"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "syntax-018",
+      "description": "Address literal is rejected by the profile",
+      "input": { "email": "jane@[192.168.0.1]" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["bad_syntax"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "syntax-019",
+      "description": "Quoted local part is rejected by the profile",
+      "input": { "email": "\"jane doe\"@acme-corp.com" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["bad_syntax"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "syntax-020",
+      "description": "Empty local part is a structural violation",
+      "input": { "email": "@acme-corp.com" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["bad_syntax"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "syntax-021",
+      "description": "Empty domain part is a structural violation",
+      "input": { "email": "jane@" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["bad_syntax"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "syntax-022",
+      "description": "Fully internationalized address skips the profile rules and passes locally",
+      "input": { "email": "用户@例子.中国" },
+      "expected": { "verdict": "unknown", "action": "allow", "reasons": [], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "syntax-023",
+      "description": "ASCII local part with internationalized domain passes locally",
+      "input": { "email": "jane@例子.中国" },
+      "expected": { "verdict": "unknown", "action": "allow", "reasons": [], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "syntax-024",
+      "description": "Non-ASCII parts still need exactly one @",
+      "input": { "email": "用户例子.中国" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["bad_syntax"], "degraded": false, "api_called": false }
+    }
+  ]
+}

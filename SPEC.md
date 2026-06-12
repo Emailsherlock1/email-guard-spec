@@ -1,7 +1,8 @@
 # Email-Guard Specification
 
-Version: 1.0.0-rc.1
-Status: release candidate, pending the first green reference implementation
+Version: 1.0.0
+Status: stable. Reference implementation:
+[email-guard-core-php](https://github.com/Emailsherlock1/email-guard-core-php)
 
 The key words MUST, MUST NOT, SHOULD, SHOULD NOT, and MAY are to be
 interpreted as described in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119).

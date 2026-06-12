@@ -1,6 +1,6 @@
 {
   "format": "email-guard-vectors/1",
-  "spec_version": "1.0.0-rc.1",
+  "spec_version": "1.0.0",
   "category": "fail-open",
   "vectors": [
     {

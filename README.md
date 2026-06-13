@@ -52,7 +52,8 @@ The spec follows [SemVer](https://semver.org). Breaking changes to the
 decision model, the vector format, or the data formats bump the major
 version. New vectors and clarifications bump the minor version.
 
-Current version: **1.0.0**. The PHP core library
+Current version: **1.1.0** (1.1.0 added the optional decision-telemetry
+contract, SPEC.md section 11). The PHP core library
 ([email-guard-core-php](https://github.com/Emailsherlock1/email-guard-core-php))
 is the reference implementation and runs green against the full vector set.
 

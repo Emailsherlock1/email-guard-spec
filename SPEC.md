@@ -1,6 +1,6 @@
 # Email-Guard Specification
 
-Version: 1.0.0
+Version: 1.1.0
 Status: stable. Reference implementation:
 [email-guard-core-php](https://github.com/Emailsherlock1/email-guard-core-php)
 
@@ -353,3 +353,60 @@ This spec follows [SemVer](https://semver.org).
 
 Core libraries state which spec version they implement and embed the vector
 set of that version in their test suite.
+
+## 11. Decision telemetry (optional, added in 1.1.0)
+
+An integration MAY report each decision back to EmailSherlock so the account
+owner can see what the guard blocks. This is the data unlock behind the guard
+dashboard: without a key the guard blocks silently, with a key you see what it
+blocked. Reporting is entirely optional and never changes a decision.
+
+### 11.1 Privacy: domain only, never the address
+
+A telemetry event carries the **domain**, never the local part and never the
+full address. A bare domain (`mailinator.com`) is not personal data; the
+local part is. The analytics this feeds (top blocked domains, action/reason
+counts, degraded rate) need nothing more, so an event MUST NOT include the
+address. An implementation that cannot extract a domain (syntax failed before
+an `@`) sends `domain: null`.
+
+### 11.2 Event shape
+
+```json
+{
+  "domain": "mailinator.com",
+  "verdict": "disposable",
+  "action": "deny",
+  "reasons": ["disposable_provider"],
+  "degraded": false,
+  "source": "local",
+  "integration": "symfony-bundle",
+  "lib_version": "0.1.2",
+  "spec_version": "1.0.0"
+}
+```
+
+- `domain`: lowercased domain part, or null. Never the full address.
+- `verdict`, `action`, `degraded`: as in sections 6 and 7.
+- `reasons`: the result's reason list, verbatim.
+- `source`: `local` if a local check decided it, `remote` if the API did.
+- `integration`, `lib_version`, `spec_version`: optional provenance strings.
+
+### 11.3 Reporting semantics
+
+- **Fire-and-forget, fail-silent.** Reporting MUST NOT delay or change the
+  form submit. In PHP, report after `fastcgi_finish_request`. A failed report
+  is dropped, never surfaced to the visitor.
+- **Batched.** Events SHOULD be sent in batches, not one request per submit.
+- **Key-gated.** Reporting runs only when an API key is configured. No key,
+  no telemetry.
+- **Transport.** `POST /v1/guard/events` with `{ "events": [ ... ] }`. The
+  endpoint is free (no credits), returns `202 { accepted, rejected }`, and
+  drops malformed items rather than rejecting the whole batch. The full
+  request/response contract lives in the published OpenAPI document, not here.
+
+### 11.4 No conformance vectors
+
+Unlike the decision model, telemetry has no conformance vectors: it is an
+outbound side effect, not a verdict, so there is nothing for the cross-language
+vector set to pin. The endpoint contract is covered by the server's own tests.

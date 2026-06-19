@@ -1,0 +1,87 @@
+{
+  "format": "email-guard-vectors/1",
+  "spec_version": "1.2.0",
+  "category": "relay",
+  "vectors": [
+    {
+      "id": "relay-001",
+      "description": "relay is inert by default: a relay address with no relay token in the policy passes on its verdict",
+      "input": {
+        "email": "jane@example-corp.com",
+        "config": { "api_key": "test-key" },
+        "api": { "result": "valid", "reason": "mailbox_accepts", "relay": true, "relay_provider": "SimpleLogin" }
+      },
+      "expected": { "verdict": "valid", "action": "allow", "reasons": ["mailbox_accepts"], "degraded": false, "api_called": true }
+    },
+    {
+      "id": "relay-002",
+      "description": "relay in block_on denies a relay address; the active signal appends the reason 'relay'",
+      "input": {
+        "email": "jane@example-corp.com",
+        "config": { "api_key": "test-key", "block_on": ["invalid", "disposable", "relay"] },
+        "api": { "result": "valid", "reason": "mailbox_accepts", "relay": true, "relay_provider": "SimpleLogin" }
+      },
+      "expected": { "verdict": "valid", "action": "deny", "reasons": ["mailbox_accepts", "relay"], "degraded": false, "api_called": true }
+    },
+    {
+      "id": "relay-003",
+      "description": "relay in review_on flags a relay address for review while the verdict stays valid",
+      "input": {
+        "email": "jane@example-corp.com",
+        "config": { "api_key": "test-key", "review_on": ["relay"] },
+        "api": { "result": "valid", "reason": "mailbox_accepts", "relay": true }
+      },
+      "expected": { "verdict": "valid", "action": "review", "reasons": ["mailbox_accepts", "relay"], "degraded": false, "api_called": true }
+    },
+    {
+      "id": "relay-004",
+      "description": "deny beats review for signals too: relay in both lists denies",
+      "input": {
+        "email": "jane@example-corp.com",
+        "config": { "api_key": "test-key", "block_on": ["relay"], "review_on": ["relay"] },
+        "api": { "result": "valid", "reason": "mailbox_accepts", "relay": true }
+      },
+      "expected": { "verdict": "valid", "action": "deny", "reasons": ["mailbox_accepts", "relay"], "degraded": false, "api_called": true }
+    },
+    {
+      "id": "relay-005",
+      "description": "relay:false is not active even when relay is listed; the address passes",
+      "input": {
+        "email": "jane@example-corp.com",
+        "config": { "api_key": "test-key", "block_on": ["invalid", "disposable", "relay"] },
+        "api": { "result": "valid", "reason": "mailbox_accepts", "relay": false }
+      },
+      "expected": { "verdict": "valid", "action": "allow", "reasons": ["mailbox_accepts"], "degraded": false, "api_called": true }
+    },
+    {
+      "id": "relay-006",
+      "description": "an absent relay field reads as false: no relay signal, no relay reason",
+      "input": {
+        "email": "jane@example-corp.com",
+        "config": { "api_key": "test-key", "block_on": ["relay"] },
+        "api": { "result": "valid", "reason": "mailbox_accepts" }
+      },
+      "expected": { "verdict": "valid", "action": "allow", "reasons": ["mailbox_accepts"], "degraded": false, "api_called": true }
+    },
+    {
+      "id": "relay-007",
+      "description": "signals never fire on a degraded check: relay in block_on does not turn an outage into a deny",
+      "input": {
+        "email": "jane@example-corp.com",
+        "config": { "api_key": "test-key", "block_on": ["invalid", "disposable", "relay"] },
+        "api": "unavailable"
+      },
+      "expected": { "verdict": "unknown", "action": "allow", "reasons": ["api_unavailable"], "degraded": true, "api_called": true }
+    },
+    {
+      "id": "relay-008",
+      "description": "an unlisted relay signal stays inert even when true: a disposable relay address denies on its verdict, no relay reason",
+      "input": {
+        "email": "jane@example-corp.com",
+        "config": { "api_key": "test-key" },
+        "api": { "result": "disposable", "reason": "disposable_provider", "relay": true }
+      },
+      "expected": { "verdict": "disposable", "action": "deny", "reasons": ["disposable_provider"], "degraded": false, "api_called": true }
+    }
+  ]
+}

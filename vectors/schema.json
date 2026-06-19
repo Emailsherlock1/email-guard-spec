@@ -27,6 +27,10 @@
     "verdict": {
       "enum": ["valid", "invalid", "disposable", "role", "catch_all", "unknown"]
     },
+    "decision_token": {
+      "description": "A token usable in block_on / review_on: a verdict (section 6.1) or a signal (section 6.5).",
+      "enum": ["valid", "invalid", "disposable", "role", "catch_all", "unknown", "relay"]
+    },
     "action": {
       "enum": ["allow", "deny", "review"]
     },
@@ -84,11 +88,11 @@
         },
         "block_on": {
           "type": "array",
-          "items": { "$ref": "#/$defs/verdict" }
+          "items": { "$ref": "#/$defs/decision_token" }
         },
         "review_on": {
           "type": "array",
-          "items": { "$ref": "#/$defs/verdict" }
+          "items": { "$ref": "#/$defs/decision_token" }
         },
         "fail_open": { "type": "boolean" },
         "timeout_ms": { "type": "integer", "minimum": 1 }

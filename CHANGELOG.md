@@ -4,6 +4,28 @@ All notable changes to this spec. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org) as defined in SPEC.md section 10.
 
+## [1.2.0] - 2026-06-19
+
+Added (additive, no behavior change to existing vectors):
+
+- Section 6.5: **signals**. A signal is a boolean response property that an
+  integrator can place in `block_on` / `review_on` alongside verdicts. Unlike a
+  verdict, a signal overlays rather than replaces the classification (an address
+  can be both `valid` and a signal). The first signal is `relay`.
+- `relay`: relay / forwarding / alias-masking services (SimpleLogin, Apple Hide
+  My Email, Cloudflare Email Routing, …). Sourced from the Verify API response
+  field `relay: true`; `relay_provider` names the service (informational). A
+  relay address is deliverable and reaches a real person, just masked, so
+  `relay` is inert by default and only acts when listed in `block_on` /
+  `review_on`. When it drives the action, the reason `relay` is appended.
+- Section 6.4 action resolution now folds the `relay` signal in. Existing
+  verdict-only configs are unaffected (an unlisted signal does nothing, an
+  unknown token is inert).
+- New conformance vectors: `vectors/relay.json`.
+
+This is a minor bump: a new reserved name (`relay`) and new optional behavior;
+no existing vector's expected output changes.
+
 ## [1.1.0] - 2026-06-13
 
 Added (additive, no behavior change to existing vectors):

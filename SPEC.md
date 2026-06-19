@@ -1,6 +1,6 @@
 # Email-Guard Specification
 
-Version: 1.1.0
+Version: 1.2.0
 Status: stable. Reference implementation:
 [email-guard-core-php](https://github.com/Emailsherlock1/email-guard-core-php)
 
@@ -167,16 +167,21 @@ are specified by the published OpenAPI document at
 
 ### 5.1 Response mapping
 
-Two response fields feed the decision model:
+These response fields feed the decision model:
 
 - `result` is the verdict, verbatim. The API enum (`valid`, `invalid`,
   `catch_all`, `disposable`, `role`, `unknown`) is identical to the verdict
   enum in section 6.1.
 - `reason`, when non-null, is appended to the result's reason list.
+- `relay` (bool, added in 1.2.0) is the `relay` signal (section 6.5). It
+  overlays the verdict instead of replacing it: an address can be both `valid`
+  and `relay`. It influences the action only when the integrator opts in via
+  `block_on` / `review_on`; otherwise it is informational.
 
-Everything else in the response (`score`, `deliverable`, the `domain` object)
-is informational. Implementations SHOULD expose the raw response to callers
-but MUST NOT let it influence the action.
+Everything else in the response (`score`, `deliverable`, `relay_provider`, the
+`domain` object) is informational. Implementations SHOULD expose the raw
+response to callers but MUST NOT let it influence the action beyond the `relay`
+rule in section 6.5.
 
 An API answer of `result: "unknown"` (greylisting, SMTP timeout, a deferred
 batch) is a normal verdict and flows through the decision model like any
@@ -227,13 +232,16 @@ verbatim (`no_mx`, `mailbox_accepts`, `mailbox_not_found`, `role_address`,
 Implementations MUST pass unrecognized reason strings through rather than
 reject them.
 
+When a signal is active (section 6.5), its name is appended to the reason
+list. The only signal in 1.2.0 is `relay`.
+
 ### 6.3 Configuration
 
 | Key | Type | Default | Meaning |
 |-----|------|---------|---------|
 | `api_key` | string or null | null | null disables the remote check |
-| `block_on` | list of verdicts | `["invalid", "disposable"]` | verdicts that deny |
-| `review_on` | list of verdicts | `[]` | verdicts that flag for review |
+| `block_on` | list of verdicts and signals | `["invalid", "disposable"]` | verdicts (and signals, section 6.5) that deny |
+| `review_on` | list of verdicts and signals | `[]` | verdicts (and signals, section 6.5) that flag for review |
 | `fail_open` | bool | `true` | what a degraded check does |
 | `timeout_ms` | int | `800` | total budget for the remote check |
 
@@ -242,20 +250,28 @@ provably junk and let everything debatable (role addresses, catch-all
 domains, unknowns) through. `review` is for flows that have a second gate:
 hold the signup, require email confirmation, queue for a human.
 
+`block_on` / `review_on` accept verdicts (section 6.1) and signals
+(section 6.5). An unknown token is inert: it matches nothing and is not an
+error, so an integrator can list `relay` against an older core library without
+breaking.
+
 ### 6.4 Action resolution
 
 ```
 if degraded:
     action = fail_open ? allow : deny
 else:
-    action = verdict in block_on  ? deny
-           : verdict in review_on ? review
-           : allow
+    blocked  = verdict in block_on  or (relay and "relay" in block_on)
+    reviewed = verdict in review_on or (relay and "relay" in review_on)
+    action = blocked ? deny : reviewed ? review : allow
 ```
 
-Two rules fall out of this and are pinned by vectors:
+`relay` is the boolean signal from section 6.5 (false unless the remote check
+set it). Three rules fall out of this and are pinned by vectors:
 
-- `deny` beats `review`: a verdict listed in both lists denies.
+- `deny` beats `review`: a verdict or signal listed in both lists denies.
+- A signal only acts when listed: `relay` defaults to inert, so an address on
+  a relay service passes unless the integrator opts in.
 - Degradation bypasses `block_on` and `review_on` entirely. Listing
   `unknown` in `block_on` is a statement about *answered* unknowns
   (greylisting, missing key); it MUST NOT turn an API outage into a wall of
@@ -264,6 +280,30 @@ Two rules fall out of this and are pinned by vectors:
 
 Fail-open is the default because the cost asymmetry is stark: a blocked
 legitimate customer is worth more than a leaked junk signup.
+
+### 6.5 Signals
+
+A *signal* is a boolean property of the remote response that an integrator can
+place in `block_on` / `review_on` next to verdicts. Unlike a verdict, a signal
+does not replace the verdict: the address keeps its `valid` / `catch_all` / …
+classification and may also carry the signal.
+
+| Signal | Source | Meaning |
+|--------|--------|---------|
+| `relay` | response `relay: true` | the address sits on a relay / forwarding / alias-masking service (SimpleLogin, Apple Hide My Email, Cloudflare Email Routing, …). It is deliverable and reaches a real person, just masked. `relay_provider` names the service and is informational. |
+
+Rules:
+
+- A signal influences the action only when the integrator lists it (section
+  6.4). By default `relay` does nothing.
+- A signal is **active** when it is true and listed in `block_on` or
+  `review_on`. When a signal is active, its name is appended to the result's
+  reasons (so telemetry, section 11, and the dashboard can attribute the
+  decision), even if a verdict independently produced the same or a stronger
+  action.
+- Signals are produced only by the remote check. Local checks and degraded
+  checks never set them (`relay` is false), so a signal never fires without an
+  API answer.
 
 ## 7. Result object
 

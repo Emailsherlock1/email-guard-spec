@@ -1,6 +1,6 @@
 # Email-Guard Specification
 
-Version: 1.2.0
+Version: 1.3.0
 Status: stable. Reference implementation:
 [email-guard-core-php](https://github.com/Emailsherlock1/email-guard-core-php)
 
@@ -193,9 +193,30 @@ Any of these makes the check **degraded**: connection failure, total timeout
 exceeded, or any non-2xx HTTP status. There is no retry at check time; one
 form submit gets at most one API call.
 
-A degraded check yields verdict `unknown` with reason `api_unavailable` and
-sets `degraded: true` on the result. The action is then decided by
-`fail_open` alone (section 6.4).
+A degraded check yields verdict `unknown`, sets `degraded: true` on the
+result, and carries `api_unavailable` as its first reason. The action is then
+decided by `fail_open` alone (section 6.4).
+
+When the implementation can attribute the failure, it appends one granular
+reason after `api_unavailable` so telemetry can tell "the API was slow" apart
+from "the API errored" apart from "the API was unreachable":
+
+| Granular reason | Cause |
+|-----------------|-------|
+| `api_timeout` | the total or connect timeout budget was exceeded |
+| `api_unreachable` | DNS, TLS, or connection failure before any HTTP status |
+| `api_http_5xx` | the API answered a 5xx status |
+| `api_http_4xx` | the API answered a 4xx status (bad key, rate limit, …) |
+| `api_bad_response` | a 2xx answer whose body was not the expected JSON |
+
+The granular reason is best-effort: a transport that cannot separate a timeout
+from a connection failure (a PSR-18 client that surfaces both as one exception,
+for example) MAY omit it and leave `api_unavailable` standing alone.
+`api_unavailable` is present on every degraded check, so a consumer that only
+counts outages never has to special-case the granular set. The HTTP status
+code is deliberately not part of the reason name, which keeps the reason set
+bounded; an implementation MAY expose the code elsewhere (the raw response, a
+log line).
 
 Implementations SHOULD cache recent API responses keyed by address (the API
 itself answers from cache where it can) and MAY add a circuit breaker that
@@ -224,6 +245,11 @@ Reasons from local checks:
 | `reserved_tld` | section 4.2 (local only) |
 | `disposable_provider` | section 4.3 (also used by the API) |
 | `api_unavailable` | section 5.2 (local only) |
+| `api_timeout` | section 5.2 (local only) |
+| `api_unreachable` | section 5.2 (local only) |
+| `api_http_4xx` | section 5.2 (local only) |
+| `api_http_5xx` | section 5.2 (local only) |
+| `api_bad_response` | section 5.2 (local only) |
 
 Reasons from the API arrive in the `reason` response field and pass through
 verbatim (`no_mx`, `mailbox_accepts`, `mailbox_not_found`, `role_address`,
@@ -233,7 +259,7 @@ Implementations MUST pass unrecognized reason strings through rather than
 reject them.
 
 When a signal is active (section 6.5), its name is appended to the reason
-list. The only signal in 1.2.0 is `relay`.
+list. The only signal so far is `relay`.
 
 ### 6.3 Configuration
 

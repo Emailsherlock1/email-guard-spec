@@ -52,11 +52,23 @@
             "email": { "type": "string" },
             "config": { "$ref": "#/$defs/config" },
             "api": {
-              "description": "Transport mock: null = no API key configured, 'unavailable' = timeout / non-2xx, object = parsed response body the mock returns.",
+              "description": "Transport mock. null = no API key configured. 'unavailable' = a generic degraded check (cause not attributed). An object with a 'fail' key = a specific transport failure to simulate. Any other object = the parsed response body the mock returns with HTTP 200.",
               "oneOf": [
                 { "type": "null" },
                 { "const": "unavailable" },
-                { "type": "object" }
+                {
+                  "type": "object",
+                  "required": ["fail"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "fail": { "enum": ["timeout", "connection", "http", "bad_response"] },
+                    "status": { "type": "integer", "minimum": 100, "maximum": 599 }
+                  }
+                },
+                {
+                  "type": "object",
+                  "not": { "required": ["fail"] }
+                }
               ]
             }
           }

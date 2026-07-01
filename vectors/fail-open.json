@@ -1,6 +1,6 @@
 {
   "format": "email-guard-vectors/1",
-  "spec_version": "1.0.0",
+  "spec_version": "1.3.0",
   "category": "fail-open",
   "vectors": [
     {
@@ -58,6 +58,66 @@
       "description": "No key configured is a configuration, not an outage: degraded stays false",
       "input": { "email": "jane@real-corp.com" },
       "expected": { "verdict": "unknown", "action": "allow", "reasons": [], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "fo-007",
+      "description": "A timeout is degraded and attributed: api_unavailable umbrella plus the granular api_timeout",
+      "input": {
+        "email": "jane@real-corp.com",
+        "config": { "api_key": "test-key" },
+        "api": { "fail": "timeout" }
+      },
+      "expected": { "verdict": "unknown", "action": "allow", "reasons": ["api_unavailable", "api_timeout"], "degraded": true, "api_called": true }
+    },
+    {
+      "id": "fo-008",
+      "description": "A connection / DNS / TLS failure before any HTTP status attributes api_unreachable",
+      "input": {
+        "email": "jane@real-corp.com",
+        "config": { "api_key": "test-key" },
+        "api": { "fail": "connection" }
+      },
+      "expected": { "verdict": "unknown", "action": "allow", "reasons": ["api_unavailable", "api_unreachable"], "degraded": true, "api_called": true }
+    },
+    {
+      "id": "fo-009",
+      "description": "A 5xx status attributes api_http_5xx",
+      "input": {
+        "email": "jane@real-corp.com",
+        "config": { "api_key": "test-key" },
+        "api": { "fail": "http", "status": 503 }
+      },
+      "expected": { "verdict": "unknown", "action": "allow", "reasons": ["api_unavailable", "api_http_5xx"], "degraded": true, "api_called": true }
+    },
+    {
+      "id": "fo-010",
+      "description": "A 4xx status (here 429 rate limit) attributes api_http_4xx",
+      "input": {
+        "email": "jane@real-corp.com",
+        "config": { "api_key": "test-key" },
+        "api": { "fail": "http", "status": 429 }
+      },
+      "expected": { "verdict": "unknown", "action": "allow", "reasons": ["api_unavailable", "api_http_4xx"], "degraded": true, "api_called": true }
+    },
+    {
+      "id": "fo-011",
+      "description": "A 2xx answer with a non-JSON body attributes api_bad_response",
+      "input": {
+        "email": "jane@real-corp.com",
+        "config": { "api_key": "test-key" },
+        "api": { "fail": "bad_response" }
+      },
+      "expected": { "verdict": "unknown", "action": "allow", "reasons": ["api_unavailable", "api_bad_response"], "degraded": true, "api_called": true }
+    },
+    {
+      "id": "fo-012",
+      "description": "The granular reason rides along but never changes the action: fail_open false still denies, reasons still carry the umbrella plus the cause",
+      "input": {
+        "email": "jane@real-corp.com",
+        "config": { "api_key": "test-key", "fail_open": false },
+        "api": { "fail": "timeout" }
+      },
+      "expected": { "verdict": "unknown", "action": "deny", "reasons": ["api_unavailable", "api_timeout"], "degraded": true, "api_called": true }
     }
   ]
 }

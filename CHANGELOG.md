@@ -4,6 +4,27 @@ All notable changes to this spec. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org) as defined in SPEC.md section 10.
 
+## [1.3.0] - 2026-06-30
+
+Added (additive, no behavior change to existing vectors):
+
+- Section 5.2: **granular degraded reasons**. A degraded check still carries
+  `api_unavailable`, but an implementation that can attribute the failure now
+  appends one of `api_timeout`, `api_unreachable`, `api_http_5xx`,
+  `api_http_4xx`, or `api_bad_response`. This lets the telemetry tell a latency
+  problem (raise the timeout budget) apart from an API-health problem apart from
+  an unreachable endpoint, where before all four collapsed into
+  `api_unavailable`.
+- Section 6.2 reasons table lists the five new reserved names (all local-only).
+- New conformance vectors in `vectors/fail-open.json` (`fo-007` … `fo-012`) and
+  an extended transport-mock form in the vector schema: an `api` object with a
+  `fail` key (`timeout` / `connection` / `http` + `status` / `bad_response`)
+  describes a specific transport failure to simulate.
+
+This is a minor bump: five new reserved names and new optional behavior.
+`api_unavailable` stays present on every degraded check, so no existing
+vector's expected output changes.
+
 ## [1.2.0] - 2026-06-19
 
 Added (additive, no behavior change to existing vectors):

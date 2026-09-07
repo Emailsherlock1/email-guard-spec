@@ -4,6 +4,37 @@ All notable changes to this spec. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org) as defined in SPEC.md section 10.
 
+## [1.4.0] - 2026-09-07
+
+Added (additive, no behavior change to existing vectors):
+
+- Section 6.5: **`spam_trap`, the second signal**. Sourced from the Verify API
+  response field `spam_trap: true`; `spam_trap_type` says how the host was
+  identified (`known_trap_domain` from a curated registry,
+  `reputation_heuristic` from a scoring heuristic) and is informational. Like
+  every signal it overlays the verdict rather than replacing it, and it is
+  inert until the integrator lists it. `review_on` is the safer home for it:
+  the heuristic source can be wrong about a real mailbox.
+- Section 6.4 action resolution is now written over the signal table instead of
+  naming `relay`, and pins what happens when more than one signal is active:
+  one action (the strongest), and one reason per active listed signal, appended
+  in the order of the section 6.5 table. With a single signal there was nothing
+  to order, so this pins previously unspecified behavior rather than changing
+  any existing vector.
+- Section 5.1 now says explicitly that the response's own `decision` object is
+  the API's recommendation to a generic caller and MUST NOT be read by an
+  implementation. It was never a mapped field, but it is the obvious wrong
+  place to look for a signal, and the spec never said so.
+- Section 6.3 spells out the cost of inert unknown tokens: a typo and a signal
+  the installed library predates look identical from the config, so an
+  implementation SHOULD expose the signal names it knows.
+- New conformance vectors: `vectors/spam-trap.json` (`trap-001` … `trap-012`),
+  including the two-active-signal cases. `decision_token` in the vector schema
+  gains `spam_trap`.
+
+This is a minor bump: one new reserved name (`spam_trap`) and new optional
+behavior; no existing vector's expected output changes.
+
 ## [1.3.0] - 2026-06-30
 
 Added (additive, no behavior change to existing vectors):

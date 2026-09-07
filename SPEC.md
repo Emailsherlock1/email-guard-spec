@@ -1,6 +1,6 @@
 # Email-Guard Specification
 
-Version: 1.3.0
+Version: 1.4.0
 Status: stable. Reference implementation:
 [email-guard-core-php](https://github.com/Emailsherlock1/email-guard-core-php)
 
@@ -173,15 +173,22 @@ These response fields feed the decision model:
   `catch_all`, `disposable`, `role`, `unknown`) is identical to the verdict
   enum in section 6.1.
 - `reason`, when non-null, is appended to the result's reason list.
-- `relay` (bool, added in 1.2.0) is the `relay` signal (section 6.5). It
-  overlays the verdict instead of replacing it: an address can be both `valid`
-  and `relay`. It influences the action only when the integrator opts in via
-  `block_on` / `review_on`; otherwise it is informational.
+- Every **signal source field** named in the table in section 6.5 (`relay`
+  since 1.2.0, `spam_trap` since 1.4.0) sets its signal when the field is
+  boolean `true`. A signal overlays the verdict instead of replacing it: an
+  address can be both `valid` and `relay`, or both `catch_all` and `spam_trap`.
+  A signal influences the action only when the integrator opts in via
+  `block_on` / `review_on`; otherwise it is informational. A missing field, or
+  one that is not boolean `true`, reads as false.
 
-Everything else in the response (`score`, `deliverable`, `relay_provider`, the
-`domain` object) is informational. Implementations SHOULD expose the raw
-response to callers but MUST NOT let it influence the action beyond the `relay`
-rule in section 6.5.
+Everything else in the response is informational: `score`, `deliverable`, the
+signal detail fields (`relay_provider`, `spam_trap_type`), and the `domain`
+object. The response also carries its own `decision` object. That is the API's
+recommendation to a generic caller, computed without any knowledge of this
+guard's configuration, and implementations MUST NOT read it: the guard's action
+comes from section 6.4 and nothing else. Implementations SHOULD expose the raw
+response to callers but MUST NOT let it influence the action beyond the signal
+rules in section 6.5.
 
 An API answer of `result: "unknown"` (greylisting, SMTP timeout, a deferred
 batch) is a normal verdict and flows through the decision model like any
@@ -259,7 +266,7 @@ Implementations MUST pass unrecognized reason strings through rather than
 reject them.
 
 When a signal is active (section 6.5), its name is appended to the reason
-list. The only signal so far is `relay`.
+list. The signal names are `relay` and `spam_trap`.
 
 ### 6.3 Configuration
 
@@ -278,26 +285,38 @@ hold the signup, require email confirmation, queue for a human.
 
 `block_on` / `review_on` accept verdicts (section 6.1) and signals
 (section 6.5). An unknown token is inert: it matches nothing and is not an
-error, so an integrator can list `relay` against an older core library without
-breaking.
+error, so an integrator can list a signal name against a core library that
+predates it without breaking. The cost of that tolerance is that a typo, and a
+signal the installed library does not implement yet, are indistinguishable from
+the config alone: both simply do nothing. An implementation SHOULD therefore
+expose the signal names it knows (a constant, a documented list) so an
+integrator can tell the two apart.
 
 ### 6.4 Action resolution
 
 ```
+active   = [name for name in SIGNALS if signal(name)]
+
 if degraded:
     action = fail_open ? allow : deny
 else:
-    blocked  = verdict in block_on  or (relay and "relay" in block_on)
-    reviewed = verdict in review_on or (relay and "relay" in review_on)
+    blocked  = verdict in block_on  or any(name in block_on  for name in active)
+    reviewed = verdict in review_on or any(name in review_on for name in active)
     action = blocked ? deny : reviewed ? review : allow
 ```
 
-`relay` is the boolean signal from section 6.5 (false unless the remote check
-set it). Three rules fall out of this and are pinned by vectors:
+`SIGNALS` is the signal table of section 6.5, in the order it lists them; each
+signal is false unless the remote check set it. Four rules fall out of this and
+are pinned by vectors:
 
 - `deny` beats `review`: a verdict or signal listed in both lists denies.
-- A signal only acts when listed: `relay` defaults to inert, so an address on
-  a relay service passes unless the integrator opts in.
+- A signal only acts when listed: every signal defaults to inert, so an address
+  carrying one passes unless the integrator opts in.
+- Signals do not compete. Two active signals produce one action (the strongest
+  of the two), and each appends its own reason, in the order of the section 6.5
+  table rather than the order of `block_on` / `review_on`. That order is a
+  conformance detail, not a ranking: reason lists are compared as sequences
+  across implementations, so it has to be pinned somewhere.
 - Degradation bypasses `block_on` and `review_on` entirely. Listing
   `unknown` in `block_on` is a statement about *answered* unknowns
   (greylisting, missing key); it MUST NOT turn an API outage into a wall of
@@ -314,22 +333,36 @@ place in `block_on` / `review_on` next to verdicts. Unlike a verdict, a signal
 does not replace the verdict: the address keeps its `valid` / `catch_all` / …
 classification and may also carry the signal.
 
-| Signal | Source | Meaning |
-|--------|--------|---------|
-| `relay` | response `relay: true` | the address sits on a relay / forwarding / alias-masking service (SimpleLogin, Apple Hide My Email, Cloudflare Email Routing, …). It is deliverable and reaches a real person, just masked. `relay_provider` names the service and is informational. |
+The table is the normative list, and its order is the order signals append
+their reasons (section 6.4):
+
+| Signal | Source | Since | Meaning |
+|--------|--------|-------|---------|
+| `relay` | response `relay: true` | 1.2.0 | the address sits on a relay / forwarding / alias-masking service (SimpleLogin, Apple Hide My Email, Cloudflare Email Routing, …). It is deliverable and reaches a real person, just masked. `relay_provider` names the service and is informational. |
+| `spam_trap` | response `spam_trap: true` | 1.4.0 | the mail host is a known or suspected spam trap. The address may well accept mail, which is the point: sending to a trap is what damages a sender reputation. `spam_trap_type` says how it was identified (`known_trap_domain` from a curated registry, `reputation_heuristic` from a scoring heuristic) and is informational. |
 
 Rules:
 
 - A signal influences the action only when the integrator lists it (section
-  6.4). By default `relay` does nothing.
+  6.4). By default every signal does nothing.
 - A signal is **active** when it is true and listed in `block_on` or
   `review_on`. When a signal is active, its name is appended to the result's
   reasons (so telemetry, section 11, and the dashboard can attribute the
   decision), even if a verdict independently produced the same or a stronger
   action.
 - Signals are produced only by the remote check. Local checks and degraded
-  checks never set them (`relay` is false), so a signal never fires without an
-  API answer.
+  checks never set them (every signal is false), so a signal never fires
+  without an API answer.
+- A signal name is reserved once this spec lists it, so an implementation MUST
+  NOT mint signal names of its own: an integrator's `block_on` entry has to
+  mean the same thing in every language.
+
+Which list a signal belongs in is the integrator's call, and the spec pins the
+mechanics rather than the policy. `spam_trap` is worth one note anyway, because
+its two sources differ in confidence: `known_trap_domain` is curated, while
+`reputation_heuristic` is inferred and can be wrong about a real mailbox.
+`review_on` is therefore the safer home for it, and `block_on` a deliberate
+choice to reject a small number of real addresses to keep every trap out.
 
 ## 7. Result object
 

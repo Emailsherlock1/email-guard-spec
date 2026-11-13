@@ -163,7 +163,7 @@ The implementation sends `POST /v1/verify/single` with the normalized address
 and the configured key, and applies a total timeout of `timeout_ms`
 (default 800). The endpoint contract, all response fields, and authentication
 are specified by the published OpenAPI document at
-`https://emailsherlock.com/v1/openapi.json`; this spec does not duplicate it.
+`https://api.emailsherlock.com/v1/openapi.json`; this spec does not duplicate it.
 
 ### 5.1 Response mapping
 

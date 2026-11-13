@@ -27,7 +27,7 @@ email-guard-spec (this repo)            the stable middle
 Every integration works without an API key: syntax, reserved-TLD, and a
 bundled disposable-domain snapshot run locally at zero cost. An API key adds
 the data unlock: live MX, SMTP probe, a fresh disposable list, role and
-catch-all detection. See the [Verify API docs](https://emailsherlock.com/api/docs).
+catch-all detection. See the [Verify API docs](https://www.hostsherlock.com/api/docs).
 
 ## Repo layout
 
@@ -59,7 +59,7 @@ is the reference implementation and runs green against the full vector set.
 
 ## Related
 
-- [EmailSherlock Verify API](https://emailsherlock.com/api/docs): the remote
+- [EmailSherlock Verify API](https://www.hostsherlock.com/api/docs): the remote
   side of this contract (`POST /v1/verify/single`)
 - Core libraries and integrations live in their own repos under the
   [Emailsherlock1](https://github.com/Emailsherlock1) org

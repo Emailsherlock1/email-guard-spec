@@ -4,6 +4,22 @@ All notable changes to this spec. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows
 [SemVer](https://semver.org) as defined in SPEC.md section 10.
 
+## [1.4.0] - 2026-11-26
+
+Added (clarification that pins existing behavior):
+
+- Section 4.1: the character rules hold for the last character of a part
+  too. A line feed, carriage return or NUL before the `@` or before a `.`
+  makes the part invalid, and an end-anchored regex has to anchor at the true
+  end of the string (PCRE and Python `$` also match before a final `\n`).
+- New conformance vectors in `vectors/syntax.json` (`syntax-025` …
+  `syntax-028`) with `\n`, `\r` and `\0` at the end of a local part and of a
+  domain label.
+
+This is a minor bump: the profile always excluded these characters, so no
+existing vector's expected output changes. Implementations that anchored with
+a bare `$` accepted `syntax-025` and `syntax-026` and need a fix.
+
 ## [1.3.0] - 2026-06-30
 
 Added (additive, no behavior change to existing vectors):

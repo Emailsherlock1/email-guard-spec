@@ -1,6 +1,6 @@
 {
   "format": "email-guard-vectors/1",
-  "spec_version": "1.0.0",
+  "spec_version": "1.4.0",
   "category": "syntax",
   "vectors": [
     {
@@ -145,6 +145,30 @@
       "id": "syntax-024",
       "description": "Non-ASCII parts still need exactly one @",
       "input": { "email": "用户例子.中国" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["bad_syntax"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "syntax-025",
+      "description": "Line feed at the end of the local part (trim only covers the ends of the whole input)",
+      "input": { "email": "jane\n@acme-corp.com" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["bad_syntax"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "syntax-026",
+      "description": "Line feed at the end of a domain label",
+      "input": { "email": "jane@acme-corp\n.com" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["bad_syntax"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "syntax-027",
+      "description": "Carriage return at the end of the local part",
+      "input": { "email": "jane\r@acme-corp.com" },
+      "expected": { "verdict": "invalid", "action": "deny", "reasons": ["bad_syntax"], "degraded": false, "api_called": false }
+    },
+    {
+      "id": "syntax-028",
+      "description": "NUL byte at the end of a domain label",
+      "input": { "email": "jane@acme-corp\u0000.com" },
       "expected": { "verdict": "invalid", "action": "deny", "reasons": ["bad_syntax"], "degraded": false, "api_called": false }
     }
   ]

@@ -1,6 +1,6 @@
 # Email-Guard Specification
 
-Version: 1.3.0
+Version: 1.4.0
 Status: stable. Reference implementation:
 [email-guard-core-php](https://github.com/Emailsherlock1/email-guard-core-php)
 
@@ -101,6 +101,15 @@ Domain part:
   also rejects address literals like `[192.168.0.1]`.
 
 A violation produces verdict `invalid` with reason `bad_syntax`.
+
+The character rules hold for every character of a part, the last one
+included. Trimming (section 3) only removes whitespace at the ends of the
+whole input, so a line break or other control character before the `@` or
+before a `.` stays in its part and makes it invalid. Implementations that
+check a part with an end-anchored regex MUST anchor at the true end of the
+string: in PCRE and Python `$` also matches before a final line feed, so use
+`\z` (PCRE), the `D` modifier (PCRE) or `re.fullmatch` (Python). Pinned by
+`syntax-025` to `syntax-028` (added in 1.4.0).
 
 **International addresses.** If a part contains any code point above U+007F,
 its profile rules are skipped and that part is treated as syntactically

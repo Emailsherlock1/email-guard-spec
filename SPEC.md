@@ -1,6 +1,6 @@
 # Email-Guard Specification
 
-Version: 1.4.0
+Version: 1.5.0
 Status: stable. Reference implementation:
 [email-guard-core-php](https://github.com/Emailsherlock1/email-guard-core-php)
 
@@ -102,6 +102,15 @@ Domain part:
 
 A violation produces verdict `invalid` with reason `bad_syntax`.
 
+The character rules hold for every character of a part, the last one
+included. Trimming (section 3) only removes whitespace at the ends of the
+whole input, so a line break or other control character before the `@` or
+before a `.` stays in its part and makes it invalid. Implementations that
+check a part with an end-anchored regex MUST anchor at the true end of the
+string: in PCRE and Python `$` also matches before a final line feed, so use
+`\z` (PCRE), the `D` modifier (PCRE) or `re.fullmatch` (Python). Pinned by
+`syntax-025` to `syntax-028` (added in 1.4.0).
+
 **International addresses.** If a part contains any code point above U+007F,
 its profile rules are skipped and that part is treated as syntactically
 acceptable. Rationale: the guard blocks what it can prove is junk. A strict
@@ -163,7 +172,7 @@ The implementation sends `POST /v1/verify/single` with the normalized address
 and the configured key, and applies a total timeout of `timeout_ms`
 (default 800). The endpoint contract, all response fields, and authentication
 are specified by the published OpenAPI document at
-`https://emailsherlock.com/v1/openapi.json`; this spec does not duplicate it.
+`https://api.emailsherlock.com/v1/openapi.json`; this spec does not duplicate it.
 
 ### 5.1 Response mapping
 
@@ -174,7 +183,7 @@ These response fields feed the decision model:
   enum in section 6.1.
 - `reason`, when non-null, is appended to the result's reason list.
 - Every **signal source field** named in the table in section 6.5 (`relay`
-  since 1.2.0, `spam_trap` since 1.4.0) sets its signal when the field is
+  since 1.2.0, `spam_trap` since 1.5.0) sets its signal when the field is
   boolean `true`. A signal overlays the verdict instead of replacing it: an
   address can be both `valid` and `relay`, or both `catch_all` and `spam_trap`.
   A signal influences the action only when the integrator opts in via
@@ -339,7 +348,7 @@ their reasons (section 6.4):
 | Signal | Source | Since | Meaning |
 |--------|--------|-------|---------|
 | `relay` | response `relay: true` | 1.2.0 | the address sits on a relay / forwarding / alias-masking service (SimpleLogin, Apple Hide My Email, Cloudflare Email Routing, …). It is deliverable and reaches a real person, just masked. `relay_provider` names the service and is informational. |
-| `spam_trap` | response `spam_trap: true` | 1.4.0 | the mail host is a known or suspected spam trap. The address may well accept mail, which is the point: sending to a trap is what damages a sender reputation. `spam_trap_type` says how it was identified (`known_trap_domain` from a curated registry, `reputation_heuristic` from a scoring heuristic) and is informational. |
+| `spam_trap` | response `spam_trap: true` | 1.5.0 | the mail host is a known or suspected spam trap. The address may well accept mail, which is the point: sending to a trap is what damages a sender reputation. `spam_trap_type` says how it was identified (`known_trap_domain` from a curated registry, `reputation_heuristic` from a scoring heuristic) and is informational. |
 
 Rules:
 

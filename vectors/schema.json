@@ -29,7 +29,7 @@
     },
     "decision_token": {
       "description": "A token usable in block_on / review_on: a verdict (section 6.1) or a signal (section 6.5).",
-      "enum": ["valid", "invalid", "disposable", "role", "catch_all", "unknown", "relay"]
+      "enum": ["valid", "invalid", "disposable", "role", "catch_all", "unknown", "relay", "spam_trap"]
     },
     "action": {
       "enum": ["allow", "deny", "review"]

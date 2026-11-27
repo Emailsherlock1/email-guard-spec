@@ -7,7 +7,7 @@
       "id": "trap-001",
       "description": "spam_trap is inert by default: a trap address with no spam_trap token in the policy passes on its verdict",
       "input": {
-        "email": "jane@trap-domain.test",
+        "email": "jane@trap-corp.com",
         "config": { "api_key": "test-key" },
         "api": { "result": "valid", "reason": "mailbox_accepts", "spam_trap": true, "spam_trap_type": "known_trap_domain" }
       },
@@ -17,7 +17,7 @@
       "id": "trap-002",
       "description": "spam_trap in review_on flags the address for review while the verdict stays valid; the active signal appends the reason 'spam_trap'",
       "input": {
-        "email": "jane@trap-domain.test",
+        "email": "jane@trap-corp.com",
         "config": { "api_key": "test-key", "review_on": ["spam_trap"] },
         "api": { "result": "valid", "reason": "mailbox_accepts", "spam_trap": true, "spam_trap_type": "known_trap_domain" }
       },
@@ -27,7 +27,7 @@
       "id": "trap-003",
       "description": "spam_trap in block_on denies the address: policy belongs to the integrator, so a signal the API itself calls informational can still deny here",
       "input": {
-        "email": "jane@trap-domain.test",
+        "email": "jane@trap-corp.com",
         "config": { "api_key": "test-key", "block_on": ["invalid", "disposable", "spam_trap"] },
         "api": { "result": "valid", "reason": "mailbox_accepts", "spam_trap": true, "spam_trap_type": "reputation_heuristic" }
       },
@@ -37,7 +37,7 @@
       "id": "trap-004",
       "description": "deny beats review for spam_trap too: listed in both lists, it denies",
       "input": {
-        "email": "jane@trap-domain.test",
+        "email": "jane@trap-corp.com",
         "config": { "api_key": "test-key", "block_on": ["spam_trap"], "review_on": ["spam_trap"] },
         "api": { "result": "valid", "reason": "mailbox_accepts", "spam_trap": true }
       },
@@ -67,7 +67,7 @@
       "id": "trap-007",
       "description": "signals never fire on a degraded check: spam_trap in block_on does not turn an outage into a deny",
       "input": {
-        "email": "jane@trap-domain.test",
+        "email": "jane@trap-corp.com",
         "config": { "api_key": "test-key", "block_on": ["invalid", "disposable", "spam_trap"] },
         "api": "unavailable"
       },
@@ -77,7 +77,7 @@
       "id": "trap-008",
       "description": "an unlisted spam_trap signal stays inert even when true: a disposable trap address denies on its verdict, with no spam_trap reason",
       "input": {
-        "email": "jane@trap-domain.test",
+        "email": "jane@trap-corp.com",
         "config": { "api_key": "test-key" },
         "api": { "result": "disposable", "reason": "disposable_provider", "spam_trap": true }
       },
@@ -87,7 +87,7 @@
       "id": "trap-009",
       "description": "the signal overlays the verdict rather than replacing it: a catch_all trap address keeps verdict catch_all and reviews on the listed signal",
       "input": {
-        "email": "jane@trap-domain.test",
+        "email": "jane@trap-corp.com",
         "config": { "api_key": "test-key", "review_on": ["spam_trap"] },
         "api": { "result": "catch_all", "reason": "catch_all_domain", "spam_trap": true }
       },
@@ -97,7 +97,7 @@
       "id": "trap-010",
       "description": "two active signals append both reasons, in the order of the section 6.5 table and not the order of review_on",
       "input": {
-        "email": "jane@trap-domain.test",
+        "email": "jane@trap-corp.com",
         "config": { "api_key": "test-key", "review_on": ["spam_trap", "relay"] },
         "api": { "result": "valid", "reason": "mailbox_accepts", "relay": true, "relay_provider": "SimpleLogin", "spam_trap": true }
       },
@@ -107,7 +107,7 @@
       "id": "trap-011",
       "description": "signals do not compete: relay reviews and spam_trap denies, so the action is deny and both reasons are still recorded",
       "input": {
-        "email": "jane@trap-domain.test",
+        "email": "jane@trap-corp.com",
         "config": { "api_key": "test-key", "review_on": ["relay"], "block_on": ["spam_trap"] },
         "api": { "result": "valid", "reason": "mailbox_accepts", "relay": true, "spam_trap": true }
       },
@@ -117,7 +117,7 @@
       "id": "trap-012",
       "description": "one active signal is enough: relay is true but unlisted, so only spam_trap appends a reason",
       "input": {
-        "email": "jane@trap-domain.test",
+        "email": "jane@trap-corp.com",
         "config": { "api_key": "test-key", "review_on": ["spam_trap"] },
         "api": { "result": "valid", "reason": "mailbox_accepts", "relay": true, "spam_trap": true }
       },
